@@ -1,24 +1,24 @@
 @api = http://localhost:9090
 
-@code = daily_report
-
 ### get clients
 GET {{api}}/biz/ws/clients
 
 ### boardcast message
-POST {{api}}/biz/ws/boardcast
+POST {{api}}/biz/ws/broadcast
 Content-Type: application/json
 
 {
+    "namespace": "foo",
     "payload": "demo-data"
 }
 
 ### send message
-POST {{api}}/biz/ws/boardcast
+POST {{api}}/biz/ws/send
 Content-Type: application/json
 
 {
+    "namespace": "foo",
     "sender": "abc",
-    "reveiver": ["foo"],
-    "payload": "demo-data"
+    "receiver": ["123"],
+    "payload": "demo-data2"
 }

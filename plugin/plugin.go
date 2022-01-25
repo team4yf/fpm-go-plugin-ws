@@ -1,26 +1,25 @@
 package plugin
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/team4yf/yf-fpm-server-go/ctx"
 	"github.com/team4yf/yf-fpm-server-go/fpm"
 )
 
 type WSNamespace struct {
-	Name string
-	Path string
+	Name string `json:"name"`
+	Path string `json:"path"`
 }
 type WSOptions struct {
-	Enable    bool
-	Namespace []WSNamespace
+	Enable    bool                    `json:"enable"`
+	Namespace map[string]*WSNamespace `json:"namespace"`
 }
 
 type Body struct {
 	Sender    string   `json:"sender"`
 	Receiver  []string `json:"receiver"`
-	Namespace []string `json:"namespace"`
-	Boardcast bool     `json:"boardcast"`
+	Namespace string   `json:"namespace"`
 	Payload   string   `json:"payload"`
 }
 
@@ -41,17 +40,30 @@ func init() {
 			if !options.Enable {
 				return
 			}
-			hub := newHub()
-			go hub.run()
-			fpmApp.BindHandler("/ws/{channel}", func(c *ctx.Ctx, _ *fpm.Fpm) {
-				channel := c.Param("channel")
-				fmt.Println("Channel:", channel)
-				serveWs(hub, c.GetResponse(), c.GetRequest())
+			hubs := map[string]*Hub{}
+			for _, v := range options.Namespace {
+				hub := NewHub(v.Name)
+				hubs[v.Name] = hub
+				go hub.Run()
+			}
+			fpmApp.BindHandler("/ws/{ns}", func(c *ctx.Ctx, _ *fpm.Fpm) {
+				ns := c.Param("ns")
+				h, ok := hubs[ns]
+				if !ok {
+					c.Fail(errors.New("NAME_SPACE_NOT_FOUND"))
+					return
+				}
+				serveWs(h, c)
 			})
 			fpmApp.AddBizModule("ws", &fpm.BizModule{
 				"send": func(param *fpm.BizParam) (data interface{}, err error) {
 					body := Body{}
 					if err = param.Convert(&body); err != nil {
+						return
+					}
+					hub, ok := hubs[body.Namespace]
+					if !ok {
+						err = errors.New("NAME_SPACE_NOT_FOUND")
 						return
 					}
 					for _, id := range body.Receiver {
@@ -65,6 +77,11 @@ func init() {
 					if err = param.Convert(&body); err != nil {
 						return
 					}
+					hub, ok := hubs[body.Namespace]
+					if !ok {
+						err = errors.New("NAME_SPACE_NOT_FOUND")
+						return
+					}
 					for _, client := range hub.Clients {
 						client.Send <- []byte(body.Payload)
 					}
@@ -72,9 +89,13 @@ func init() {
 					return
 				},
 				"clients": func(param *fpm.BizParam) (data interface{}, err error) {
-					clients := []string{}
-					for id := range hub.Clients {
-						clients = append(clients, id)
+					clients := map[string][]string{}
+					for _, hub := range hubs {
+						ids := []string{}
+						for id := range hub.Clients {
+							ids = append(ids, id)
+						}
+						clients[hub.Namespace] = ids
 					}
 					data = clients
 					return

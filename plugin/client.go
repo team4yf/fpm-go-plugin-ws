@@ -1,14 +1,12 @@
 package plugin
 
 import (
-	"bytes"
-	"log"
-	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
 	fpmUtils "github.com/team4yf/fpm-go-pkg/utils"
 	"github.com/team4yf/yf-fpm-server-go/ctx"
+	"github.com/team4yf/yf-fpm-server-go/fpm"
 )
 
 const (
@@ -64,16 +62,15 @@ func (c *Client) ReadPump() {
 		_, message, err := c.Conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				fpm.Default().Publish("#ws/error", err)
 			}
 			break
 		}
-		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.Hub.Send <- &Msg{
-			ClientID: "",
-			Payload:  message,
-		}
-		// c.hub.broadcast <- message
+		fpm.Default().Publish("#ws/receive", map[string]interface{}{
+			"namespace": c.Hub.Namespace,
+			"message":   string(message),
+			"clientID":  c.ID,
+		})
 	}
 }
 
@@ -124,14 +121,12 @@ func (c *Client) WritePump() {
 }
 
 // serveWs handles websocket requests from the peer.
-func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
+func serveWs(hub *Hub, c *ctx.Ctx) {
+	conn, err := upgrader.Upgrade(c.GetResponse(), c.GetRequest(), nil)
 	if err != nil {
-		log.Println(err)
 		return
 	}
-	ctx := ctx.WrapCtx(w, r)
-	userId := ctx.Query("uid")
+	userId := c.Query("uid")
 	if userId == "" {
 		userId = fpmUtils.GenShortID()
 	}
