@@ -1,0 +1,1 @@
+# fpm-go-plugin-ws
