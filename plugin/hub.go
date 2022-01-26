@@ -17,6 +17,8 @@ type Hub struct {
 
 	// logout requests from clients.
 	Logout chan *Client
+
+	Options *WSNamespace
 }
 
 type Msg struct {
@@ -24,13 +26,14 @@ type Msg struct {
 	Payload  []byte
 }
 
-func NewHub(ns string) *Hub {
+func NewHub(ns string, options *WSNamespace) *Hub {
 	return &Hub{
 		Namespace: ns,
 		Send:      make(chan *Msg, 10),
 		Login:     make(chan *Client),
 		Logout:    make(chan *Client, 10),
 		Clients:   make(map[string]*Client),
+		Options:   options,
 	}
 }
 

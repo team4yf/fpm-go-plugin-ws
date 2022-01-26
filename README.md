@@ -8,6 +8,8 @@ ws:
   namespace:
     foo:
       name: "foo"
+      validation: "key" # key or jwt
+      extra: "abc"
     bar:
       name: "bar"
 ```

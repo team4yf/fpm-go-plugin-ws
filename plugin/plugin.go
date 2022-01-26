@@ -3,13 +3,16 @@ package plugin
 import (
 	"errors"
 
+	"github.com/team4yf/fpm-go-pkg/utils"
 	"github.com/team4yf/yf-fpm-server-go/ctx"
 	"github.com/team4yf/yf-fpm-server-go/fpm"
 )
 
 type WSNamespace struct {
-	Name string `json:"name"`
-	Path string `json:"path"`
+	Name       string `json:"name"`
+	Path       string `json:"path"`
+	Validation string `json:"validation"`
+	Extra      string `json:"extra"`
 }
 type WSOptions struct {
 	Enable    bool                    `json:"enable"`
@@ -42,7 +45,7 @@ func init() {
 			}
 			hubs := map[string]*Hub{}
 			for _, v := range options.Namespace {
-				hub := NewHub(v.Name)
+				hub := NewHub(v.Name, v)
 				hubs[v.Name] = hub
 				go hub.Run()
 			}
@@ -52,6 +55,20 @@ func init() {
 				if !ok {
 					c.Fail(errors.New("NAME_SPACE_NOT_FOUND"))
 					return
+				}
+				if h.Options.Validation == "jwt" {
+					token := c.Query("token")
+					if ok, _ := utils.CheckToken(token); !ok {
+						c.Fail(errors.New("TOKEN_NO_VALID"))
+						return
+					}
+				}
+				if h.Options.Validation == "key" {
+					token := c.Query("token")
+					if token != h.Options.Extra {
+						c.Fail(errors.New("TOKEN_NO_VALID"))
+						return
+					}
 				}
 				serveWs(h, c)
 			})
