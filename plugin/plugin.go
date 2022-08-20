@@ -84,6 +84,9 @@ func init() {
 						return
 					}
 					for _, id := range body.Receiver {
+						if hub.Clients[id] == nil {
+							continue
+						}
 						hub.Clients[id].Send <- []byte(body.Payload)
 					}
 					data = 1
