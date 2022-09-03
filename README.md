@@ -25,6 +25,6 @@ ws:
 		"clientID": "",
 	}
   ```
-- #ws/errors
-- #ws/connect
-- #ws/close
+- #ws/errors/${namespace}
+- #ws/connect/${namespace}
+- #ws/close/${namespace}

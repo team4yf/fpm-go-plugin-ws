@@ -68,14 +68,17 @@ func (c *Client) ReadPump() {
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				fpm.Default().Publish("#ws/error", err)
+				fpm.Default().Publish("#ws/error/"+c.Namespaces, err)
 			}
 			break
 		}
-		fpm.Default().Publish("#ws/receive", map[string]interface{}{
+		payload := map[string]interface{}{
 			"namespace": c.Hub.Namespace,
 			"message":   string(message),
 			"clientID":  c.ID,
-		})
+		}
+		fpm.Default().Publish("#ws/receive", payload)
+		fpm.Default().Publish("#ws/receive/"+c.Namespaces, payload)
 	}
 }
 

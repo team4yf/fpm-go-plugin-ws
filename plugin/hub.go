@@ -43,11 +43,13 @@ func (h *Hub) Run() {
 		case client := <-h.Login:
 			h.Clients[client.ID] = client
 			fpm.Default().Publish("#ws/connect", client.ID)
+			fpm.Default().Publish("#ws/connect/"+client.Namespaces, client.ID)
 		case client := <-h.Logout:
 			if _, ok := h.Clients[client.ID]; ok {
 				delete(h.Clients, client.ID)
 				close(client.Send)
 				fpm.Default().Publish("#ws/close", client.ID)
+				fpm.Default().Publish("#ws/close/"+client.Namespaces, client.ID)
 			}
 		case message := <-h.Send:
 			if message.ClientID == "" {
