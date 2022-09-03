@@ -14,7 +14,7 @@ func main() {
 	handler := func(topic string, data interface{}) {
 		fmt.Printf("%s %v\n", topic, data)
 	}
-	fpmApp.Subscribe("#ws/connect", handler)
+	fpmApp.Subscribe("#ws/connect/bar", handler)
 	fpmApp.Subscribe("#ws/close", handler)
 	fpmApp.Subscribe("#ws/error", handler)
 	fpmApp.Subscribe("#ws/receive", handler)

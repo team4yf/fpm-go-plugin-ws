@@ -1,6 +1,8 @@
 package plugin
 
-import "github.com/team4yf/yf-fpm-server-go/fpm"
+import (
+	"github.com/team4yf/yf-fpm-server-go/fpm"
+)
 
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
@@ -43,13 +45,13 @@ func (h *Hub) Run() {
 		case client := <-h.Login:
 			h.Clients[client.ID] = client
 			fpm.Default().Publish("#ws/connect", client.ID)
-			fpm.Default().Publish("#ws/connect/"+client.Namespaces, client.ID)
+			fpm.Default().Publish("#ws/connect/"+h.Namespace, client.ID)
 		case client := <-h.Logout:
 			if _, ok := h.Clients[client.ID]; ok {
 				delete(h.Clients, client.ID)
 				close(client.Send)
 				fpm.Default().Publish("#ws/close", client.ID)
-				fpm.Default().Publish("#ws/close/"+client.Namespaces, client.ID)
+				fpm.Default().Publish("#ws/close/"+h.Namespace, client.ID)
 			}
 		case message := <-h.Send:
 			if message.ClientID == "" {

@@ -68,7 +68,7 @@ func (c *Client) ReadPump() {
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				fpm.Default().Publish("#ws/error", err)
-				fpm.Default().Publish("#ws/error/"+c.Namespaces, err)
+				fpm.Default().Publish("#ws/error/"+c.Hub.Namespace, err)
 			}
 			break
 		}
@@ -78,7 +78,7 @@ func (c *Client) ReadPump() {
 			"clientID":  c.ID,
 		}
 		fpm.Default().Publish("#ws/receive", payload)
-		fpm.Default().Publish("#ws/receive/"+c.Namespaces, payload)
+		fpm.Default().Publish("#ws/receive/"+c.Hub.Namespace, payload)
 	}
 }
 
